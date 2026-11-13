@@ -23,6 +23,19 @@ dotnet run --project src/AutoAddSchedule/AutoAddSchedule.csproj
 
 首次运行若未配置密钥，会直接打开「设置」页。托盘图标出现后，主窗口可关闭，程序继续常驻。
 
+## 调试与视觉检查
+
+开发期可用的命令行参数：
+
+- `--page calendar|list|settings`：启动后直接显示指定页面（用于界面视觉检查）。
+- `--capture`：启动 1.2 秒后自动进入截图流程（用于验证截图界面）。
+
+辅助脚本（仅开发使用，不参与程序运行）：
+
+- `pwsh tools/screenshot.ps1 -OutPath .tmp/screen.png`：抓取当前桌面到 PNG。
+- `pwsh tools/test.ps1`：与构建共用互斥锁运行测试，避免与构建并发冲突。
+- `pwsh tools/make-icon.ps1`：重新生成 `src/AutoAddSchedule/Assets/app.ico`。
+
 ## 测试
 
 ```powershell

@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AssemblyName>AutoAddSchedule</AssemblyName>
     <RootNamespace>AutoAddSchedule</RootNamespace>
     <Version>0.1.0</Version>

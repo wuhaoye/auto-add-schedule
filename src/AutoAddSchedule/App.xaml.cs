@@ -86,9 +86,40 @@ public partial class App : Application
             ShowMainWindow();
         }
 
+        // 调试/QA 参数（开发期使用）：
+        //   --page calendar|list|settings  启动后直接显示指定页面
+        //   --capture                      启动后自动进入截图流程（用于验证截图界面）
+        var qaPage = ReadArg(e.Args, "--page");
+        if (!string.IsNullOrWhiteSpace(qaPage))
+        {
+            ShowMainWindow(qaPage);
+        }
+
+        if (e.Args.Any(arg => string.Equals(arg, "--capture", StringComparison.OrdinalIgnoreCase)))
+        {
+            Dispatcher.BeginInvoke(async () =>
+            {
+                await Task.Delay(1200);
+                await AppServices.Capture.RunAsync();
+            });
+        }
+
         var gesture = HotkeyGesture.Parse(config.Hotkey.Gesture) ?? HotkeyGesture.Default;
         AppServices.Tray.UpdateTooltip("AutoAddSchedule：按 " + gesture.DisplayText + " 截图添加日程");
         AppServices.Tray.ShowBalloon("AutoAddSchedule 已启动", "按 " + gesture.DisplayText + " 截图添加日程。");
+    }
+
+    private static string? ReadArg(string[] args, string name)
+    {
+        for (var i = 0; i < args.Length - 1; i++)
+        {
+            if (string.Equals(args[i], name, StringComparison.OrdinalIgnoreCase))
+            {
+                return args[i + 1];
+            }
+        }
+
+        return null;
     }
 
     public static void ShowMainWindow(string? navigateTo = null)
