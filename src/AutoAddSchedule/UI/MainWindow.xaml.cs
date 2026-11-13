@@ -37,7 +37,11 @@ public partial class MainWindow : Window
         FitToWorkArea();
     }
 
-    /// <summary>按当前屏幕工作区收缩窗口，避免在高 DPI / 小屏幕上窗口超出可视区域。</summary>
+    /// <summary>
+    /// 按当前屏幕工作区收缩窗口并手动居中。
+    /// 注意：只在 OnSourceInitialized 里改尺寸时，WPF 仍会按原始尺寸计算 CenterScreen 位置，
+    /// 导致窗口顶部跑到屏幕外、标题栏不可见且无法拖动。因此这里改为手动定位并夹在工作区内。
+    /// </summary>
     private void FitToWorkArea()
     {
         var workArea = SystemParameters.WorkArea;
@@ -46,8 +50,14 @@ public partial class MainWindow : Window
             return;
         }
 
-        Width = Math.Min(Width, Math.Max(MinWidth, workArea.Width - 24));
-        Height = Math.Min(Height, Math.Max(MinHeight, workArea.Height - 24));
+        var width = Math.Min(Width, Math.Max(MinWidth, workArea.Width - 24));
+        var height = Math.Min(Height, Math.Max(MinHeight, workArea.Height - 24));
+
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        Width = width;
+        Height = height;
+        Left = workArea.Left + Math.Max(0, (workArea.Width - width) / 2);
+        Top = workArea.Top + Math.Max(0, (workArea.Height - height) / 2);
     }
 
     /// <summary>刷新左侧底部的快捷键提示（保存设置后调用）。</summary>
