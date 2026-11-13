@@ -258,12 +258,19 @@ public partial class ScheduleListView : UserControl
 
     private void OnSchedulesChanged(object? sender, EventArgs e)
     {
+        // 事件可能来自同步完成的后台线程：先切回 UI 线程再访问 IsLoaded 等界面对象。
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(() => OnSchedulesChanged(sender, e)));
+            return;
+        }
+
         if (!IsLoaded)
         {
             return;
         }
 
-        Dispatcher.InvokeAsync(RefreshList);
+        RefreshList();
     }
 }
 
