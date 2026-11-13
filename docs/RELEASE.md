@@ -8,6 +8,7 @@ pwsh tools/publish.ps1
 
 产物输出到 publish/：目标机器无需安装 .NET 运行时，双击 AutoAddSchedule.exe 即用。
 首次发布需要从 NuGet 下载 Windows x64 运行时包（约 150–250 MB，缓存于 %USERPROFILE%\.nuget\packages）。
+实测 win-x64 自包含发布目录约 154 MB（251 个文件），已在本机 Windows 11 上启动验证。
 
 ## 目录约定
 
