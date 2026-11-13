@@ -1,0 +1,22 @@
+<Window x:Class="AutoAddSchedule.UI.Dialogs.SupplementDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="补充信息" Height="300" Width="520"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource AppWindowStyle}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="补充说明（会随截图一起发给大模型，例如「提前30分钟提醒我」）"
+                   Style="{StaticResource BaseTextStyle}" Margin="0,0,0,10" />
+        <TextBox Grid.Row="1" x:Name="InputBox" Style="{StaticResource AppTextBoxStyle}"
+                 AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" />
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="取消" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Click="Cancel_Click" />
+            <Button Content="确定" Style="{StaticResource PrimaryButtonStyle}" Click="Ok_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

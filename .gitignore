@@ -1,0 +1,36 @@
+# Windows / Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.tmp
+*.bak
+
+# 构建产物
+bin/
+obj/
+publish/
+artifacts/
+TestResults/
+*.binlog
+*.nupkg
+
+# 本地密钥与配置：绝不提交（安全要求：不得硬编码、不得入库）
+.env
+.env.local
+.env.*.local
+secrets.dat
+*.secret.json
+
+# 运行时目录
+screenshots/
+logs/
+*.log
+
+# 测试与调试临时文件
+.tmp/
+tests/_tmp/
+tmp/
+*.trx
+*.coverage

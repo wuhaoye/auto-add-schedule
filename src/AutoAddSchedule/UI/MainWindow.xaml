@@ -1,0 +1,33 @@
+<Window x:Class="AutoAddSchedule.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AutoAddSchedule 自动添加日程"
+        Height="760" Width="1120"
+        MinHeight="600" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource AppWindowStyle}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}">
+            <StackPanel Margin="16,26,16,16">
+                <TextBlock Text="AutoAddSchedule" FontSize="18" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextOnDarkBrush}" />
+                <TextBlock Text="自动添加日程" FontSize="12" Margin="0,4,0,0"
+                           Foreground="{StaticResource TextOnDarkMutedBrush}" />
+
+                <Button x:Name="NavCalendarButton" Content="日历" Margin="0,34,0,6"
+                        Style="{StaticResource NavButtonStyle}" Click="NavCalendar_Click" />
+                <Button x:Name="NavListButton" Content="日程" Margin="0,0,0,6"
+                        Style="{StaticResource NavButtonStyle}" Click="NavList_Click" />
+                <Button x:Name="NavSettingsButton" Content="设置" Margin="0,0,0,6"
+                        Style="{StaticResource NavButtonStyle}" Click="NavSettings_Click" />
+            </StackPanel>
+        </Border>
+
+        <ContentControl Grid.Column="1" x:Name="ContentHost" Margin="24" />
+    </Grid>
+</Window>

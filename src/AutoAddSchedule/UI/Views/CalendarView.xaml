@@ -1,0 +1,7 @@
+<UserControl x:Class="AutoAddSchedule.UI.Views.CalendarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <TextBlock Text="日历视图（待实现）" Style="{StaticResource PageTitleTextStyle}" />
+    </Grid>
+</UserControl>
