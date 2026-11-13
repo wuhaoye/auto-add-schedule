@@ -11,7 +11,7 @@
 
 ```text
 MODELKEY=sk-xxxx                      # DeepSeek API Key
-APPLEID=someone@example.com           # iCloud 账号（Apple ID 邮箱）
+APPLEID=someone@example.com           # iCloud 账号；若 Apple ID 是手机号，写 86+手机号（如 8613593178488，不带 +）
 APPLEKEY=xxxx-xxxx-xxxx-xxxx          # iCloud 应用专用密码
 ```
 
@@ -29,8 +29,8 @@ APPLEKEY=xxxx-xxxx-xxxx-xxxx          # iCloud 应用专用密码
 
 ### iCloud 日历
 
-- Apple ID 邮箱
-- 应用专用密码（在 https://appleid.apple.com 生成，形如 xxxx-xxxx-xxxx-xxxx）
+- Apple ID：邮箱账号直接填邮箱；手机号账号必须写成「86 + 手机号」且不带加号，例如 13593178488 写作 8613593178488（实测纯手机号或 +86 前缀会认证失败）
+- 应用专用密码（在 https://appleid.apple.com 生成，形如 xxxx-xxxx-xxxx-xxxx；不是 Apple ID 登录密码）
 - 「读取日历列表」通过 CalDAV 发现账号下的日历，选择同步目标并记住
 
 ### 快捷键

@@ -13,11 +13,12 @@ AutoAddSchedule 通过标准 CalDAV（RFC 4791）把本地日程同步到 iCloud
 ## 认证
 
 - 服务器：https://caldav.icloud.com（CalDavConfig.ServerUrl）。
-- 用户名：Apple ID 邮箱（CalDavConfig.AppleId）。
+- 用户名：Apple ID 账号（CalDavConfig.AppleId）。账号是邮箱时直接填邮箱；账号是手机号时，CalDAV 用户名必须写成「86 + 手机号」且不带加号，例如手机号 13593178488 写作 8613593178488（实测：纯手机号或带 +86 前缀都会返回 401）。
 - 密码：iCloud 应用专用密码（CalDavConfig.AppPassword）。密码经 DPAPI 加密保存在
   %AppData%\AutoAddSchedule\secrets.dat；首次运行可从仓库根目录 .env 的 APPLEID / APPLEKEY 导入。
 - 认证方式：HTTP Basic，每个请求都带 Authorization 头。
 - 应用专用密码在 https://appleid.apple.com 生成，形如 xxxx-xxxx-xxxx-xxxx，**不能**使用 Apple ID 登录密码。
+- 国内 iCloud 账号的日历可能位于分区主机（如 p218-caldav.icloud.com.cn），客户端始终使用服务器返回的绝对 URL，不写死主机名。
 - 日志与异常信息只包含请求方法、URL、HTTP 状态码与业务描述，不包含 Authorization 头或密码。
 
 ## 日历发现流程
@@ -120,19 +121,18 @@ PushPendingAsync（批量推送待同步项）：
 
 ## 错误映射
 
-| 情况 | 返回给用户的中文提示 |
-| --- | --- |
-| HTTP 401 | 认证失败：Apple ID 或应用专用密码不正确。请确认 Apple ID 邮箱，并使用应用专用密码（不是登录密码）。 |
-| HTTP 403 | iCloud 拒绝访问（403）：请确认账号已开启双重认证，并重新生成应用专用密码。 |
-| HTTP 404 | 找不到 CalDAV 资源（404）：服务器地址或日历地址可能已失效，请重新读取日历列表。 |
-| HTTP 409 | iCloud 返回冲突（409）：该日程可能已被其他设备修改，请刷新后重试。 |
-| HTTP 412 | iCloud 返回前置条件失败（412）：该日程已在其他设备上被修改，请刷新后重试。 |
-| HTTP 429 | 请求过于频繁（429）：iCloud 暂时限制访问，请稍后重试。 |
-| HTTP 5xx | iCloud 服务暂时不可用（HTTP xxx），请稍后重试。 |
-| 请求超时 | 连接 iCloud 超时，请检查网络后重试。 |
-| 网络异常 | 无法连接 iCloud 服务，请检查网络连接或代理设置。 |
-| XML 解析失败 | iCloud 返回的 CalDAV 数据无法解析，请稍后重试或检查服务器地址。 |
-| 未配置 | 尚未配置 iCloud 账号 / 尚未配置 iCloud 日历，请先在设置中完成配置。 |
+- HTTP 401：认证失败：Apple ID 或应用专用密码不正确。请确认 Apple ID 邮箱，并使用应用专用密码（不是登录密码）。
+- HTTP 403：iCloud 拒绝访问（403）：请确认账号已开启双重认证，并重新生成应用专用密码。
+- HTTP 404：找不到 CalDAV 资源（404）：服务器地址或日历地址可能已失效，请重新读取日历列表。
+- HTTP 409：iCloud 返回冲突（409）：该日程可能已被其他设备修改，请刷新后重试。
+- HTTP 412：iCloud 返回前置条件失败（412）：该日程已在其他设备上被修改，请刷新后重试。
+- HTTP 429：请求过于频繁（429）：iCloud 暂时限制访问，请稍后重试。
+- HTTP 5xx：iCloud 服务暂时不可用（HTTP xxx），请稍后重试。
+- 请求超时：连接 iCloud 超时，请检查网络后重试。
+- 网络异常：无法连接 iCloud 服务，请检查网络连接或代理设置。
+- XML 解析失败：iCloud 返回的 CalDAV 数据无法解析，请稍后重试或检查服务器地址。
+- 未配置：尚未配置 iCloud 账号 / 尚未配置 iCloud 日历，请先在设置中完成配置。
+
 
 ## 离线测试
 
@@ -143,4 +143,14 @@ PushPendingAsync（批量推送待同步项）：
     日历发现三步流程、PUT / DELETE 的 If-Match / If-None-Match 与 Content-Type、错误映射、配置缺失提示。
   - CalDavXmlParserTests 用离线样例 XML 验证多状态、多日历、displayname / href / 绝对 URL 解析、
     VTODO 日历过滤、重定向 URL 解析与非法 XML 处理。
-- 上述测试不访问真实 iCloud，不创建 / 删除真实事件；真实连通性验证由项目负责人统一执行（只读发现或测试账号）。
+- 上述测试不访问真实 iCloud，不创建 / 删除真实事件。
+
+## 真实 iCloud 验证（默认跳过）
+
+- 只读验证：tests/AutoAddSchedule.Tests/LiveEnvironmentTests.cs（连接 + 读取日历列表），由环境变量
+  AUTOADD_SCHEDULE_LIVE_CALDAV=1 开启。
+- 写入验证：tests/AutoAddSchedule.Tests/LiveCalDavWriteTests.cs（创建 → PROPFIND 校验 → 删除 → 复查 404），
+  由环境变量 AUTOADD_SCHEDULE_LIVE_CALDAV_WRITE=1 与 AUTOADD_SCHEDULE_LIVE_CALDAV_URL（目标日历绝对 URL）开启。
+  该测试会真实写入一条测试事件并在验证后删除，仅在人工确认后运行。
+- 交付前实测：手机号 Apple ID 账号可以正常发现 3 个日历；在「个人」日历创建事件成功、PROPFIND 返回 207、
+  删除后返回 404；应用内「截图 → 大模型提取 → 创建到 iCloud」整条链路成功，列表显示「已同步」。

@@ -8,16 +8,15 @@
 
 ## 文件结构
 
-| 文件 | 职责 |
-| --- | --- |
-| `UI/Capture/ScreenCapture.cs` | Win32 GDI 抓取整个虚拟屏幕（物理像素），枚举显示器物理矩形，提供裁剪与显示器查找 |
-| `UI/Capture/CaptureNativeMethods.cs` | 截图相关 Win32 API 声明（GDI、显示器枚举、窗口定位、光标） |
-| `UI/Capture/PhysicalRect.cs` | 物理像素矩形，支持负坐标与归一化 |
-| `UI/Capture/CaptureOverlayWindow.xaml(.cs)` | 单台显示器上的遮罩窗口：截图、遮罩、选区、尺寸提示、工具条 |
-| `UI/Capture/CaptureSession.cs` | 一次截图会话：创建各显示器窗口、选区状态机、键盘/工具条处理、嵌套消息循环 |
-| `Services/CaptureOverlayService.cs` | `ICaptureOverlayService` 实现，对外提供同步阻塞的 `ShowCapture()` |
-| `Services/ScreenshotStore.cs` | 截图保存为 PNG 与「保留最近 N 张」清理 |
-| `UI/Dialogs/SupplementDialog.xaml(.cs)` | 补充信息输入对话框 |
+- `UI/Capture/ScreenCapture.cs`：Win32 GDI 抓取整个虚拟屏幕（物理像素），枚举显示器物理矩形，提供裁剪与显示器查找
+- `UI/Capture/CaptureNativeMethods.cs`：截图相关 Win32 API 声明（GDI、显示器枚举、窗口定位、光标）
+- `UI/Capture/PhysicalRect.cs`：物理像素矩形，支持负坐标与归一化
+- `UI/Capture/CaptureOverlayWindow.xaml(.cs)`：单台显示器上的遮罩窗口：截图、遮罩、选区、尺寸提示、工具条
+- `UI/Capture/CaptureSession.cs`：一次截图会话：创建各显示器窗口、选区状态机、键盘/工具条处理、嵌套消息循环
+- `Services/CaptureOverlayService.cs`：`ICaptureOverlayService` 实现，对外提供同步阻塞的 `ShowCapture()`
+- `Services/ScreenshotStore.cs`：截图保存为 PNG 与「保留最近 N 张」清理
+- `UI/Dialogs/SupplementDialog.xaml(.cs)`：补充信息输入对话框
+
 
 ## 屏幕捕获
 

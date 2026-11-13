@@ -26,15 +26,14 @@ DeepSeek 使用 OpenAI 兼容协议：POST {BaseUrl}/chat/completions，默认 B
 
 ### 输出 JSON 字段
 
-| 字段 | 说明 |
-| --- | --- |
-| title | 日程标题，必填、非空，简洁明确 |
-| start | 开始时间，必填，格式 yyyy-MM-ddTHH:mm:ss |
-| end | 结束时间，可空；不得早于 start |
-| location | 地点，无法确定用 null |
-| description | 简要说明，无法确定用 null |
-| reminder_minutes_before | 提前提醒分钟数，默认 0，最小 0 |
-| all_day | 是否全天，只有日期没有时间时为 true |
+- title：日程标题，必填、非空，简洁明确
+- start：开始时间，必填，格式 yyyy-MM-ddTHH:mm:ss
+- end：结束时间，可空；不得早于 start
+- location：地点，无法确定用 null
+- description：简要说明，无法确定用 null
+- reminder_minutes_before：提前提醒分钟数，默认 0，最小 0
+- all_day：是否全天，只有日期没有时间时为 true
+
 
 ### 时间规则
 
@@ -77,16 +76,15 @@ DeepSeek 使用 OpenAI 兼容协议：POST {BaseUrl}/chat/completions，默认 B
 
 客户端把网络与接口错误翻译为中文提示，直接用于托盘/弹窗展示：
 
-| 情况 | 提示 |
-| --- | --- |
-| 未配置 API Key | 尚未配置大模型 API Key，请在设置中填写 DeepSeek API Key。 |
-| HTTP 401 | 大模型 API Key 无效或已过期，请在设置中重新填写。 |
-| HTTP 403 | 大模型 API Key 无权访问该服务（HTTP 403），请检查 Key 与 Base URL 配置。 |
-| HTTP 429 | 请求过于频繁（HTTP 429），请稍后重试。 |
-| 请求超时 | 无法连接大模型服务：请求超时（N 秒），请检查网络后重试。 |
-| 连接失败 | 无法连接大模型服务：请检查网络连接与 Base URL 配置。 |
-| 其它非 2xx | 大模型服务返回错误（HTTP 状态码）：响应内容（截断）。 |
-| 响应格式异常 / 内容为空 | 大模型返回内容为空，请稍后重试。 |
+- 未配置 API Key：尚未配置大模型 API Key，请在设置中填写 DeepSeek API Key。
+- HTTP 401：大模型 API Key 无效或已过期，请在设置中重新填写。
+- HTTP 403：大模型 API Key 无权访问该服务（HTTP 403），请检查 Key 与 Base URL 配置。
+- HTTP 429：请求过于频繁（HTTP 429），请稍后重试。
+- 请求超时：无法连接大模型服务：请求超时（N 秒），请检查网络后重试。
+- 连接失败：无法连接大模型服务：请检查网络连接与 Base URL 配置。
+- 其它非 2xx：大模型服务返回错误（HTTP 状态码）：响应内容（截断）。
+- 响应格式异常 / 内容为空：大模型返回内容为空，请稍后重试。
+
 
 ## 测试
 
