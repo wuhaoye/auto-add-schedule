@@ -1,7 +1,207 @@
 <UserControl x:Class="AutoAddSchedule.UI.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="{StaticResource AppFontFamily}">
+    <UserControl.Resources>
+        <Style x:Key="FieldLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextStyle}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="FieldRowStyle" TargetType="Grid">
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
-        <TextBlock Text="设置（待实现）" Style="{StaticResource PageTitleTextStyle}" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Text="设置" Style="{StaticResource PageTitleTextStyle}" />
+            <TextBlock Text="设置保存在本机；密钥经 Windows DPAPI 加密，仅当前用户可解密。"
+                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                       Style="{StaticResource CaptionTextStyle}" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
+            <StackPanel>
+
+                <!-- ===== 大模型 ===== -->
+                <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="大模型" Style="{StaticResource SectionTitleTextStyle}" />
+                        <TextBlock Margin="0,6,0,14" TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}"
+                                   Text="用于识别截图中的日程信息（OpenAI 兼容接口）。默认 deepseek-flash 支持图片输入；deepseek-v4-pro 不支持图片，不能用于截图识别。" />
+
+                        <Grid Style="{StaticResource FieldRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Base URL" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Grid.Column="1" x:Name="LlmBaseUrlBox" Style="{StaticResource AppTextBoxStyle}" />
+                        </Grid>
+
+                        <Grid Style="{StaticResource FieldRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="模型名" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Grid.Column="1" x:Name="LlmModelBox" Style="{StaticResource AppTextBoxStyle}" />
+                        </Grid>
+
+                        <Grid Style="{StaticResource FieldRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="API Key" Style="{StaticResource FieldLabelStyle}" />
+                            <Grid Grid.Column="1">
+                                <PasswordBox x:Name="LlmKeyBox" Style="{StaticResource AppPasswordBoxStyle}"
+                                             PasswordChanged="PasswordBox_PasswordChanged" />
+                                <TextBlock x:Name="LlmKeyPlaceholder" Margin="11,0,0,0" FontSize="13"
+                                           VerticalAlignment="Center" IsHitTestVisible="False"
+                                           Foreground="#9AA3AF" />
+                            </Grid>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <Button x:Name="LlmTestButton" Content="测试连接" Padding="16,7"
+                                    Style="{StaticResource SecondaryButtonStyle}" Click="LlmTest_Click" />
+                            <TextBlock x:Name="LlmStatusText" Margin="12,0,0,0" VerticalAlignment="Center"
+                                       TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== iCloud 日历 ===== -->
+                <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="iCloud 日历" Style="{StaticResource SectionTitleTextStyle}" />
+                        <TextBlock Margin="0,6,0,14" TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}"
+                                   Text="填写 Apple ID 与「应用专用密码」（在 appleid.apple.com 生成，形如 xxxx-xxxx-xxxx-xxxx）。日程会同步到下面选中的日历。" />
+
+                        <Grid Style="{StaticResource FieldRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Apple ID" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Grid.Column="1" x:Name="AppleIdBox" Style="{StaticResource AppTextBoxStyle}" />
+                        </Grid>
+
+                        <Grid Style="{StaticResource FieldRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="应用专用密码" Style="{StaticResource FieldLabelStyle}" />
+                            <Grid Grid.Column="1">
+                                <PasswordBox x:Name="CalDavPasswordBox" Style="{StaticResource AppPasswordBoxStyle}"
+                                             PasswordChanged="PasswordBox_PasswordChanged" />
+                                <TextBlock x:Name="CalDavPasswordPlaceholder" Margin="11,0,0,0" FontSize="13"
+                                           VerticalAlignment="Center" IsHitTestVisible="False"
+                                           Foreground="#9AA3AF" />
+                            </Grid>
+                        </Grid>
+
+                        <Grid Style="{StaticResource FieldRowStyle}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="同步目标日历" Style="{StaticResource FieldLabelStyle}" />
+                            <StackPanel Grid.Column="1">
+                                <ComboBox x:Name="CalendarComboBox" Height="32" DisplayMemberPath="DisplayName"
+                                          FontFamily="{StaticResource AppFontFamily}" FontSize="13"
+                                          SelectionChanged="CalendarComboBox_SelectionChanged" />
+                                <TextBlock x:Name="CalendarHintText" Margin="0,4,0,0" TextWrapping="Wrap"
+                                           Style="{StaticResource CaptionTextStyle}"
+                                           Text="点击「读取日历列表」获取账号下的日历；选中后点击「保存设置」保存为同步目标。" />
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <Button x:Name="CalDavTestButton" Content="测试连接" Padding="16,7"
+                                    Style="{StaticResource SecondaryButtonStyle}" Click="CalDavTest_Click" />
+                            <Button x:Name="LoadCalendarsButton" Content="读取日历列表" Padding="16,7" Margin="8,0,0,0"
+                                    Style="{StaticResource SecondaryButtonStyle}" Click="LoadCalendars_Click" />
+                            <TextBlock x:Name="CalDavStatusText" Margin="12,0,0,0" VerticalAlignment="Center"
+                                       TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== 快捷键 ===== -->
+                <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="快捷键" Style="{StaticResource SectionTitleTextStyle}" />
+                        <TextBlock Margin="0,6,0,12" TextWrapping="Wrap" Style="{StaticResource CaptionTextStyle}"
+                                   Text="点击下方输入框后按下新的组合键（至少包含 Ctrl / Alt / Shift / Win 中的一个）；按 Backspace 恢复默认快捷键。" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="截图快捷键" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Grid.Column="1" x:Name="HotkeyBox" Style="{StaticResource AppTextBoxStyle}"
+                                     IsReadOnly="True" Cursor="Hand" Background="#F7F8FA"
+                                     PreviewKeyDown="HotkeyBox_PreviewKeyDown" />
+                        </Grid>
+                        <TextBlock x:Name="HotkeyStatusText" Margin="110,6,0,0"
+                                   Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ===== 通用 ===== -->
+                <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="通用" Style="{StaticResource SectionTitleTextStyle}" />
+                        <CheckBox x:Name="AutoStartCheckBox" Margin="0,14,0,0" Content="开机自启（写入当前用户启动项）" />
+                        <CheckBox x:Name="StartMinimizedCheckBox" Margin="0,10,0,0" Content="启动后最小化到托盘（不自动弹出主窗口）" />
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="截图保留数量" Style="{StaticResource FieldLabelStyle}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <TextBox x:Name="RetentionBox" Style="{StaticResource AppTextBoxStyle}" Width="90" MaxLength="4" />
+                                <TextBlock Text="张（1-1000，超出后自动删除最旧的截图）"
+                                           Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <Button x:Name="OpenScreenshotsButton" Content="打开截图目录" Padding="16,7"
+                                    Style="{StaticResource SecondaryButtonStyle}" Click="OpenScreenshots_Click" />
+                            <Button x:Name="ExitButton" Content="退出程序" Padding="16,7" Margin="8,0,0,0"
+                                    Style="{StaticResource DangerButtonStyle}" Click="Exit_Click" />
+                            <TextBlock Text="退出后托盘图标与截图快捷键将不可用。"
+                                       Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ===== 保存（固定在页面底部，滚动卡片时始终可见） ===== -->
+        <Border Grid.Row="2" Margin="0,8,0,0" Padding="0,12,0,0"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+            <Grid>
+                <TextBlock x:Name="SaveStatusText" VerticalAlignment="Center"
+                           Style="{StaticResource CaptionTextStyle}" TextWrapping="Wrap" MaxWidth="620"
+                           HorizontalAlignment="Left" />
+                <Button x:Name="SaveButton" Content="保存设置" Padding="24,8" HorizontalAlignment="Right"
+                        Style="{StaticResource PrimaryButtonStyle}" Click="SaveButton_Click" />
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>
