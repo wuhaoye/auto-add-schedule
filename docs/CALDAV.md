@@ -1,44 +1,146 @@
 # iCloud / CalDAV 同步
 
-## 协议
+AutoAddSchedule 通过标准 CalDAV（RFC 4791）把本地日程同步到 iCloud 日历，事件内容按 RFC 5545 生成。
+除「同步 iCloud」外，本模块的其余逻辑（iCalendar 生成、XML 解析、同步编排）都可离线运行与测试。
 
-iCloud 日历使用标准 CalDAV（RFC 4791）：
+## 代码位置
 
-1. PROPFIND https://caldav.icloud.com/ 获取 current-user-principal
-2. PROPFIND principal 获取 calendar-home-set
-3. PROPFIND calendar-home 列出日历（resourcetype 含 calendar），同时读取显示名
-4. PUT {calendarUrl}/{uid}.ics 创建事件；DELETE 删除；更新使用 If-Match: {etag}
+- Services/CalendarBuilder.cs：iCalendar 生成；ICalendarFormat 为可单测的转义 / 折行 / 时间格式化辅助类。
+- Services/CalDavClient.cs：HTTP Basic 认证、日历发现、事件创建 / 更新 / 删除。
+- Services/CalDavXmlParser.cs：207 Multi-Status 响应解析（无状态纯函数，便于离线测试）。
+- Services/SyncService.cs：本地日程与 iCloud 的同步编排、同步状态写回。
 
-认证：HTTP Basic，用户名 = Apple ID 邮箱，密码 = 应用专用密码（不是账号密码）。
+## 认证
 
-## 事件格式
+- 服务器：https://caldav.icloud.com（CalDavConfig.ServerUrl）。
+- 用户名：Apple ID 邮箱（CalDavConfig.AppleId）。
+- 密码：iCloud 应用专用密码（CalDavConfig.AppPassword）。密码经 DPAPI 加密保存在
+  %AppData%\AutoAddSchedule\secrets.dat；首次运行可从仓库根目录 .env 的 APPLEID / APPLEKEY 导入。
+- 认证方式：HTTP Basic，每个请求都带 Authorization 头。
+- 应用专用密码在 https://appleid.apple.com 生成，形如 xxxx-xxxx-xxxx-xxxx，**不能**使用 Apple ID 登录密码。
+- 日志与异常信息只包含请求方法、URL、HTTP 状态码与业务描述，不包含 Authorization 头或密码。
 
-按 RFC 5545 生成：
+## 日历发现流程
+
+1. PROPFIND {ServerUrl}/（Depth:0），请求 DAV:current-user-principal。
+2. PROPFIND {current-user-principal 的 href}（Depth:0），请求 CalDAV:calendar-home-set。
+3. PROPFIND {calendar-home-set 的 href}（Depth:1），请求 D:displayname、D:resourcetype、
+   CalDAV:supported-calendar-component-set。
+
+解析规则：
+
+- resourcetype 必须包含 CalDAV:calendar。
+- 若服务器返回了 supported-calendar-component-set，且其中没有 VEVENT（例如 iCloud「提醒事项」对应的
+  VTODO 日历），则跳过该集合；未返回组件集合时不排除。
+- displayname 为空时回退为 href 的最后一段（URL 解码后）。
+- 同一 URL 只返回一次；homeset 本身（非日历集合）不会出现在结果中。
+
+返回的 CalendarInfo：
+
+- Href：服务器返回的原始 href（通常是相对路径，如 /123456789/calendars/work/）。
+- Url：绝对 URL，例如 https://caldav.icloud.com/123456789/calendars/work/。
+- DisplayName：显示名。
+
+## URL 约定
+
+- CalDavConfig.CalendarHref 保存选定日历的**绝对 URL**（由设置界面写入）。
+- CalDavConfig.CalendarDisplayName 保存显示名，仅用于界面展示。
+- 创建事件：PUT {calendar.Url}/{uid}.ics，uid 为 ScheduleItem.Uid。calendar.Url 末尾是否带斜杠均可，
+  客户端会规范化，不会产生 //。
+- 更新 / 删除事件：使用创建成功后保存到 ScheduleItem.RemoteHref 的绝对 URL。
+- 服务器返回 301 / 302 / 303 / 307 / 308 时，客户端手动跟随重定向（最多 3 次）并重新携带 Authorization，
+  不使用 HttpClient 的自动重定向（自动重定向会丢弃 Authorization，而 iCloud 可能先跳转到分区主机）。
+
+## 事件写入
+
+- 创建：HTTP PUT，If-None-Match: *，Content-Type: text/calendar; charset=utf-8。
+  响应 2xx（iCloud 通常返回 201 Created）视为成功，并从响应头读取 ETag 保存。
+- 更新：HTTP PUT 同一事件 URL；If-Match 使用保存的 ETag，ETag 缺失时使用 *。
+  响应 2xx（通常是 204 No Content）视为成功，响应若无 ETag 则沿用旧值。
+- 删除：HTTP DELETE；有 ETag 时携带 If-Match。远端事件已不存在（404）按删除成功处理，
+  避免本地已删除日程因远端被其他设备删掉而永远无法清理。
+- 测试连接：PROPFIND 服务器根（Depth:0）验证凭据；2xx（207 Multi-Status）视为成功。
+
+## iCalendar 格式（RFC 5545）
+
+头部固定为：
 
 ```text
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//AutoAddSchedule//CN
-BEGIN:VEVENT
-UID:...
-DTSTAMP:20261113T120000Z
-DTSTART:20261125T124500Z
-DTEND:20261125T130000Z
-SUMMARY:...
-LOCATION:...
-DESCRIPTION:...
-BEGIN:VALARM
-TRIGGER:-PT10M
-ACTION:DISPLAY
-DESCRIPTION:...
-END:VALARM
-END:VEVENT
-END:VCALENDAR
+CALSCALE:GREGORIAN
 ```
 
-时间以 UTC 写入（本地时间转换），避免 VTIMEZONE 兼容问题；全天事件使用 VALUE=DATE。
+VEVENT 字段与规则：
 
-## 错误处理
+- UID：ScheduleItem.Uid（创建后不再变化）。
+- DTSTAMP：生成时的当前 UTC 时间，格式 yyyyMMddTHHmmssZ。
+- DTSTART / DTEND：本地时间转换为 UTC（yyyyMMddTHHmmssZ），写入时不做 VTIMEZONE，避免兼容问题。
+  未填写结束时间时 DTEND = DTSTART + 30 分钟；结束时间不晚于开始时间时同样按开始 + 30 分钟修正。
+- SUMMARY：日程标题（空标题回退为「未命名日程」）。
+- LOCATION：地点非空时写入。
+- DESCRIPTION：描述非空时写入。
+- 提醒：ReminderMinutesBefore > 0 时追加 VALARM（ACTION:DISPLAY、TRIGGER:-PT{n}M、DESCRIPTION:标题）；
+  等于 0 时不写 VALARM。
+- 全天事件：DTSTART;VALUE=DATE:yyyyMMdd 与 DTEND;VALUE=DATE:次日，不做时区转换（当前按单日全天事件处理）。
 
-- 认证失败（401）：提示检查 Apple ID 与应用专用密码
-- 网络不可用：日程保存在本地并标记未同步，联网后可手动「刷新同步」
+文本与行格式：
+
+- TEXT 值转义反斜杠（\\）、分号（\;）、逗号（\,），换行（CRLF / CR / LF）统一转为 \n。
+- 每个物理行不超过 75 字节（UTF-8）；超长行按字符边界折行，续行以单个空格开头，不会把中文等多字节字符拆开。
+- 全部物理行使用 CRLF 行尾，最后一行同样以 CRLF 结束。
+
+## 同步服务行为
+
+PushAsync（推送单条日程）：
+
+1. CalDavConfig 未配置（缺 Apple ID 或应用专用密码）→ 失败，提示「尚未配置 iCloud 账号…」。
+2. CalendarHref 为空 → 失败，提示「尚未配置 iCloud 日历…」。
+3. ScheduleItem.RemoteHref 为空 → 调用创建接口；成功后写回 RemoteHref、ETag、CalendarHref、CalendarName、
+   IsSynced = true、LastSyncedAt，并通过 ScheduleStore 保存。
+4. RemoteHref 非空 → 调用更新接口；成功后更新 ETag、IsSynced、LastSyncedAt。
+5. 任意异常 → 返回中文失败信息，写 item.SyncError、IsSynced = false 并保存，同时写日志。
+
+DeleteRemoteAsync（删除远端事件）：
+
+- RemoteHref 为空 → 直接成功（无需删除）。
+- 未配置账号 → 失败。
+- 删除成功后清空 RemoteHref / ETag，IsSynced = false。
+- 失败时写 item.SyncError 并写日志。
+
+PushPendingAsync（批量推送待同步项）：
+
+- 遍历 ScheduleStore.GetAll(includeDeleted: true)。
+- 已软删除项：先删除远端事件，成功后再 RemoveHard 从本地彻底移除。
+- 未同步项（!IsSynced）：调用 PushAsync。
+- 单项失败不中断其余项；返回成功条数（含成功删除的条数）。
+
+同步状态字段：IsSynced、SyncError、RemoteHref、ETag、CalendarHref、CalendarName、LastSyncedAt。
+
+## 错误映射
+
+| 情况 | 返回给用户的中文提示 |
+| --- | --- |
+| HTTP 401 | 认证失败：Apple ID 或应用专用密码不正确。请确认 Apple ID 邮箱，并使用应用专用密码（不是登录密码）。 |
+| HTTP 403 | iCloud 拒绝访问（403）：请确认账号已开启双重认证，并重新生成应用专用密码。 |
+| HTTP 404 | 找不到 CalDAV 资源（404）：服务器地址或日历地址可能已失效，请重新读取日历列表。 |
+| HTTP 409 | iCloud 返回冲突（409）：该日程可能已被其他设备修改，请刷新后重试。 |
+| HTTP 412 | iCloud 返回前置条件失败（412）：该日程已在其他设备上被修改，请刷新后重试。 |
+| HTTP 429 | 请求过于频繁（429）：iCloud 暂时限制访问，请稍后重试。 |
+| HTTP 5xx | iCloud 服务暂时不可用（HTTP xxx），请稍后重试。 |
+| 请求超时 | 连接 iCloud 超时，请检查网络后重试。 |
+| 网络异常 | 无法连接 iCloud 服务，请检查网络连接或代理设置。 |
+| XML 解析失败 | iCloud 返回的 CalDAV 数据无法解析，请稍后重试或检查服务器地址。 |
+| 未配置 | 尚未配置 iCloud 账号 / 尚未配置 iCloud 日历，请先在设置中完成配置。 |
+
+## 离线测试
+
+- tests/AutoAddSchedule.Tests/CalendarBuilderTests.cs：iCalendar 转义、75 字节折行（含中文多字节字符）、
+  UTC 转换、默认结束时间、VALARM 有 / 无、全天事件、CRLF 行尾、长描述折行。
+- tests/AutoAddSchedule.Tests/CalDavClientTests.cs：
+  - CalDavClient 用假 HttpMessageHandler 离线验证 PROPFIND 请求（方法、URL、Depth、Basic 认证）、
+    日历发现三步流程、PUT / DELETE 的 If-Match / If-None-Match 与 Content-Type、错误映射、配置缺失提示。
+  - CalDavXmlParserTests 用离线样例 XML 验证多状态、多日历、displayname / href / 绝对 URL 解析、
+    VTODO 日历过滤、重定向 URL 解析与非法 XML 处理。
+- 上述测试不访问真实 iCloud，不创建 / 删除真实事件；真实连通性验证由项目负责人统一执行（只读发现或测试账号）。
